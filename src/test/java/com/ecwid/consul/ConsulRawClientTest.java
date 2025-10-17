@@ -161,11 +161,23 @@ public class ConsulRawClientTest {
         checkTokenExtraction();
     }
 
+    @Test
+    void verifyTokenFieldOverridesUrlParams() throws Exception {
+        Request request = Request.Builder.newBuilder()
+            .setEndpoint(ENDPOINT)
+            .setToken("CONFIDENTIAL")
+            .addUrlParameters(List.of(new SingleUrlParameters("token", "INVALID")))
+            .build();
+        client.makeGetRequest(request);
+        verify(httpClient).execute(captor.capture(), any(ResponseHandler.class));
+        checkTokenExtraction();
+    }
+
     private void checkTokenExtraction() {
         String targetUri = captor.getValue().getURI().toString();
 
         assertThat(targetUri).isEqualTo(EXPECTED_AGENT_ADDRESS)
-            .doesNotContain("token", "CONFIDENTIAL");
+            .doesNotContain("token", "CONFIDENTIAL", "INVALID");
         Header[] headers = captor.getValue().getAllHeaders();
         assertThat(headers).hasSize(1);
         assertThat(headers[0].getName()).isEqualTo("X-Consul-Token");

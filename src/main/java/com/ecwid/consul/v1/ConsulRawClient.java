@@ -179,8 +179,8 @@ public class ConsulRawClient {
 	private HttpRequest.Builder httpRequestBuilder(Request request) {
 		HttpRequest.Builder requestBuilder = httpRequestBuilder(request.getEndpoint(), request.getUrlParameters());
 
-		// I've assumed that it's vanishingly unlikely that a different token would be provided in URL parameters
-		// from the one in the `token` field.
+		// If a token is provided in both places, then the one in URL parameters will be overridden by the one in the
+		// `token` field.
 		Optional.ofNullable(request.getToken())
 			.ifPresent(token -> requestBuilder.addHeader("X-Consul-Token", token));
 
