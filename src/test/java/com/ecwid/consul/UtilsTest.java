@@ -2,6 +2,10 @@ package com.ecwid.consul;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class UtilsTest {
@@ -16,16 +20,21 @@ public class UtilsTest {
 
 	@Test
 	public void testGenerateUrl_Simple() throws Exception {
-		assertEquals("/some-url", Utils.generateUrl("/some-url"));
-		assertEquals("/some-url", Utils.generateUrl("/some-url", (UrlParameters) null));
-		assertEquals("/some-url", Utils.generateUrl("/some-url", null, null));
+		assertEquals("/some-url", Utils.generateUrl("/some-url", emptyList()));
+
+		List<UrlParameters> urlParams = new ArrayList<>();
+		urlParams.add(null);
+		assertEquals("/some-url", Utils.generateUrl("/some-url", urlParams));
+
+		urlParams.add(null);
+		assertEquals("/some-url", Utils.generateUrl("/some-url", urlParams));
 	}
 
 	@Test
 	public void testGenerateUrl_Parametrized() throws Exception {
 		UrlParameters first = new SingleUrlParameters("key", "value");
 		UrlParameters second = new SingleUrlParameters("key2");
-		assertEquals("/some-url?key=value&key2", Utils.generateUrl("/some-url", first, second));
+		assertEquals("/some-url?key=value&key2", Utils.generateUrl("/some-url", List.of(first, second)));
 	}
 
 	@Test
@@ -33,7 +42,7 @@ public class UtilsTest {
 		UrlParameters first = new SingleUrlParameters("key", "value value");
 		UrlParameters second = new SingleUrlParameters("key2");
 		UrlParameters third = new SingleUrlParameters("key3", "value!value");
-		assertEquals("/some-url?key=value+value&key2&key3=value%21value", Utils.generateUrl("/some-url", first, second, third));
+		assertEquals("/some-url?key=value+value&key2&key3=value%21value", Utils.generateUrl("/some-url", List.of(first, second, third)));
 	}
 
 	@Test

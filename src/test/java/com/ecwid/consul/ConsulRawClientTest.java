@@ -8,11 +8,11 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,7 +33,7 @@ public class ConsulRawClientTest {
 
     private final ArgumentCaptor<HttpUriRequest> captor = ArgumentCaptor.forClass(HttpUriRequest.class);
     private final HttpClient httpClient = mock(HttpClient.class);
-    ;
+
     private ConsulRawClient client;
 
     private static final SingleUrlParameters TOKEN_PARAM = new SingleUrlParameters("token", "CONFIDENTIAL");
@@ -81,7 +81,6 @@ public class ConsulRawClientTest {
         assertEquals(EXPECTED_AGENT_ADDRESS, calledUri.getValue().getURI().toString());
     }
 
-    @Disabled("not implemented yet")
     @Test
     public void verifyNoTokenInGets() throws Exception {
 
@@ -108,7 +107,6 @@ public class ConsulRawClientTest {
         checkTokenExtraction();
     }
 
-    @Disabled("not implemented yet")
     @Test
     public void verifyNoTokenInPuts() throws Exception {
 
@@ -118,28 +116,47 @@ public class ConsulRawClientTest {
 
         Mockito.reset(httpClient);
 
-        client.makePutRequest(Request.Builder.newBuilder().setEndpoint(ENDPOINT).setContent("content").setToken("CONFIDENTIAL").build());
+        Request request = Request.Builder.newBuilder()
+            .setEndpoint(ENDPOINT)
+            .setBinaryContent("content".getBytes(StandardCharsets.UTF_8))
+            .setToken("CONFIDENTIAL")
+            .build();
+        client.makePutRequest(request);
         verify(httpClient).execute(captor.capture(), any(ResponseHandler.class));
         checkTokenExtraction();
 
         Mockito.reset(httpClient);
 
-        client.makePutRequest(Request.Builder.newBuilder().setEndpoint(ENDPOINT).setContent("content").addUrlParameters(TOKEN_PARAMS).build());
+        request = Request.Builder.newBuilder()
+            .setEndpoint(ENDPOINT)
+            .setBinaryContent("content".getBytes(StandardCharsets.UTF_8))
+            .addUrlParameters(TOKEN_PARAMS)
+            .build();
+        client.makePutRequest(request);
         verify(httpClient).execute(captor.capture(), any(ResponseHandler.class));
         checkTokenExtraction();
     }
 
-    @Disabled("not implemented yet")
     @Test
     public void verifyNoTokenInDeletes() throws Exception {
 
-        client.makeDeleteRequest(Request.Builder.newBuilder().setEndpoint(ENDPOINT).setContent("content").setToken("CONFIDENTIAL").build());
+        Request request = Request.Builder.newBuilder()
+            .setEndpoint(ENDPOINT)
+            .setContent("content")
+            .setToken("CONFIDENTIAL")
+            .build();
+        client.makeDeleteRequest(request);
         verify(httpClient).execute(captor.capture(), any(ResponseHandler.class));
         checkTokenExtraction();
 
         Mockito.reset(httpClient);
 
-        client.makeDeleteRequest(Request.Builder.newBuilder().setEndpoint(ENDPOINT).setContent("content").addUrlParameters(TOKEN_PARAMS).build());
+        request = Request.Builder.newBuilder()
+            .setEndpoint(ENDPOINT)
+            .setContent("content")
+            .addUrlParameters(TOKEN_PARAMS)
+            .build();
+        client.makeDeleteRequest(request);
         verify(httpClient).execute(captor.capture(), any(ResponseHandler.class));
         checkTokenExtraction();
     }
