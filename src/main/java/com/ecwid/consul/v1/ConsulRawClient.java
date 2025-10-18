@@ -176,6 +176,9 @@ public class ConsulRawClient {
 		}
 	}
 
+	// This method creates an `HttpRequest.Builder` from the input `Request`, ensuring that any Consul ACL token
+	// provided as `token` in the urlParams is instead applied as an `X-Consul-Token` header, and removed from the URL
+	// params, and overriding this header with the `token` property of the input `Request`, if it is set.
 	private HttpRequest.Builder httpRequestBuilder(Request request) {
 		HttpRequest.Builder requestBuilder = httpRequestBuilder(request.getEndpoint(), request.getUrlParameters());
 
@@ -187,50 +190,50 @@ public class ConsulRawClient {
 		return requestBuilder;
 	}
 
+	// This method creates an `HttpRequest.Builder` from the input params, ensuring that any Consul ACL token provided
+	// as `token` in the urlParams is instead applied as an `X-Consul-Token` header, and removed from the URL params.
 	private HttpRequest.Builder httpRequestBuilder(String endpoint, List<UrlParameters> urlParams) {
 		String baseUrl = prepareUrl(agentAddress + endpoint);
-        List<UrlParameters> finalUrlParams = new ArrayList<>(urlParams);
+		List<UrlParameters> finalUrlParams = new ArrayList<>(urlParams);
 
 		HttpRequest.Builder requestBuilder = HttpRequest.Builder.newBuilder();
 
-        if (urlParams != null) {
-            for (UrlParameters urlParam : urlParams) {
-                if (urlParam instanceof SingleUrlParameters singleUrlParameters) {
-                    String token = extractTokenParam(singleUrlParameters);
+		for (UrlParameters urlParam : Optional.ofNullable(urlParams).orElse(new ArrayList<>())) {
+			if (urlParam instanceof SingleUrlParameters singleUrlParameters) {
+				String token = extractTokenParam(singleUrlParameters);
 
-                    if (token != null) {
-                        requestBuilder.addHeader("X-Consul-Token", token);
-                        finalUrlParams = urlParams.stream()
-                            .filter(p -> !singleUrlParameters.equals(p))
-                            .toList();
+				if (token != null) {
+					requestBuilder.addHeader("X-Consul-Token", token);
+					finalUrlParams = urlParams.stream()
+						.filter(p -> !singleUrlParameters.equals(p))
+						.toList();
 
-                        break;
-                    }
-                }
-            }
-        }
+					break;
+				}
+			}
+		}
 
 		return requestBuilder.setUrl(Utils.generateUrl(baseUrl, finalUrlParams));
 	}
 
-    public static String extractTokenParam(SingleUrlParameters singleUrlParameters) {
-        try {
-            Field keyField = SingleUrlParameters.class.getDeclaredField("key");
-            keyField.setAccessible(true);
-            String key = (String) keyField.get(singleUrlParameters);
+	public static String extractTokenParam(SingleUrlParameters singleUrlParameters) {
+		try {
+			Field keyField = SingleUrlParameters.class.getDeclaredField("key");
+			keyField.setAccessible(true);
+			String key = (String) keyField.get(singleUrlParameters);
 
-            if ("token".equals(key)) {
-                Field valueField = SingleUrlParameters.class.getDeclaredField("value");
-                valueField.setAccessible(true);
+			if ("token".equals(key)) {
+				Field valueField = SingleUrlParameters.class.getDeclaredField("value");
+				valueField.setAccessible(true);
 
-                return (String) valueField.get(singleUrlParameters);
-            }
-        }
-        catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException("Failed to extract token parameter", e);
-        }
+				return (String) valueField.get(singleUrlParameters);
+			}
+		}
+		catch (NoSuchFieldException | IllegalAccessException e) {
+			throw new RuntimeException("Failed to extract token parameter", e);
+		}
 
-        return null;
-    }
+		return null;
+	}
 
 }
