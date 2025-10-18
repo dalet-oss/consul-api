@@ -1,12 +1,16 @@
 package com.ecwid.consul.v1;
 
+import com.ecwid.consul.SingleUrlParameters;
 import com.ecwid.consul.UrlParameters;
 import com.ecwid.consul.Utils;
 import com.ecwid.consul.transport.*;
 import org.apache.http.client.HttpClient;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Vasily Vasilkov (vgv@ecwid.com)
@@ -129,62 +133,35 @@ public class ConsulRawClient {
 	}
 
 	public HttpResponse makeGetRequest(String endpoint, List<UrlParameters> urlParams) {
-		String url = prepareUrl(agentAddress + endpoint);
-		url = Utils.generateUrl(url, urlParams);
+		HttpRequest httpRequest = httpRequestBuilder(endpoint, urlParams).build();
 
-		HttpRequest request = HttpRequest.Builder.newBuilder()
-			.setUrl(url)
-			.build();
-
-		return httpTransport.makeGetRequest(request);
+		return httpTransport.makeGetRequest(httpRequest);
 	}
 
 	public HttpResponse makeGetRequest(Request request) {
-		String url = prepareUrl(agentAddress + request.getEndpoint());
-		url = Utils.generateUrl(url, request.getUrlParameters());
-
-		HttpRequest httpRequest = HttpRequest.Builder.newBuilder()
-			.setUrl(url)
-			.addHeaders(Utils.createTokenMap(request.getToken()))
-			.build();
+		HttpRequest httpRequest = httpRequestBuilder(request).build();
 
 		return httpTransport.makeGetRequest(httpRequest);
 	}
 
 	public HttpResponse makePutRequest(String endpoint, String content, UrlParameters... urlParams) {
-		String url = prepareUrl(agentAddress + endpoint);
-		url = Utils.generateUrl(url, urlParams);
-
-		HttpRequest request = HttpRequest.Builder.newBuilder()
-			.setUrl(url)
+		HttpRequest httpRequest = httpRequestBuilder(endpoint, Arrays.asList(urlParams))
 			.setContent(content)
 			.build();
 
-		return httpTransport.makePutRequest(request);
+		return httpTransport.makePutRequest(httpRequest);
 	}
 
 	public HttpResponse makePutRequest(Request request) {
-		//,  String endpoint, byte[] binaryContent, UrlParameters... urlParams
-		String url = prepareUrl(agentAddress + request.getEndpoint());
-		url = Utils.generateUrl(url, request.getUrlParameters());
-
-		HttpRequest httpRequest = HttpRequest.Builder.newBuilder()
-			.setUrl(url)
+		HttpRequest httpRequest = httpRequestBuilder(request)
 			.setBinaryContent(request.getBinaryContent())
-			.addHeaders(Utils.createTokenMap(request.getToken()))
 			.build();
 
 		return httpTransport.makePutRequest(httpRequest);
 	}
 
 	public HttpResponse makeDeleteRequest(Request request) {
-		String url = prepareUrl(agentAddress + request.getEndpoint());
-		url = Utils.generateUrl(url, request.getUrlParameters());
-
-		HttpRequest httpRequest = HttpRequest.Builder.newBuilder()
-			.setUrl(url)
-			.addHeaders(Utils.createTokenMap(request.getToken()))
-			.build();
+		HttpRequest httpRequest = httpRequestBuilder(request).build();
 
 		return httpTransport.makeDeleteRequest(httpRequest);
 	}
@@ -197,6 +174,66 @@ public class ConsulRawClient {
 		} else {
 			return url;
 		}
+	}
+
+	// This method creates an `HttpRequest.Builder` from the input `Request`, ensuring that any Consul ACL token
+	// provided as `token` in the urlParams is instead applied as an `X-Consul-Token` header, and removed from the URL
+	// params, and overriding this header with the `token` property of the input `Request`, if it is set.
+	private HttpRequest.Builder httpRequestBuilder(Request request) {
+		HttpRequest.Builder requestBuilder = httpRequestBuilder(request.getEndpoint(), request.getUrlParameters());
+
+		// If a token is provided in both places, then the one in URL parameters will be overridden by the one in the
+		// `token` field.
+		Optional.ofNullable(request.getToken())
+			.ifPresent(token -> requestBuilder.addHeader("X-Consul-Token", token));
+
+		return requestBuilder;
+	}
+
+	// This method creates an `HttpRequest.Builder` from the input params, ensuring that any Consul ACL token provided
+	// as `token` in the urlParams is instead applied as an `X-Consul-Token` header, and removed from the URL params.
+	private HttpRequest.Builder httpRequestBuilder(String endpoint, List<UrlParameters> urlParams) {
+		String baseUrl = prepareUrl(agentAddress + endpoint);
+		List<UrlParameters> finalUrlParams = new ArrayList<>(urlParams);
+
+		HttpRequest.Builder requestBuilder = HttpRequest.Builder.newBuilder();
+
+		for (UrlParameters urlParam : Optional.ofNullable(urlParams).orElse(new ArrayList<>())) {
+			if (urlParam instanceof SingleUrlParameters singleUrlParameters) {
+				String token = extractTokenParam(singleUrlParameters);
+
+				if (token != null) {
+					requestBuilder.addHeader("X-Consul-Token", token);
+					finalUrlParams = urlParams.stream()
+						.filter(p -> !singleUrlParameters.equals(p))
+						.toList();
+
+					break;
+				}
+			}
+		}
+
+		return requestBuilder.setUrl(Utils.generateUrl(baseUrl, finalUrlParams));
+	}
+
+	public static String extractTokenParam(SingleUrlParameters singleUrlParameters) {
+		try {
+			Field keyField = SingleUrlParameters.class.getDeclaredField("key");
+			keyField.setAccessible(true);
+			String key = (String) keyField.get(singleUrlParameters);
+
+			if ("token".equals(key)) {
+				Field valueField = SingleUrlParameters.class.getDeclaredField("value");
+				valueField.setAccessible(true);
+
+				return (String) valueField.get(singleUrlParameters);
+			}
+		}
+		catch (NoSuchFieldException | IllegalAccessException e) {
+			throw new RuntimeException("Failed to extract token parameter", e);
+		}
+
+		return null;
 	}
 
 }

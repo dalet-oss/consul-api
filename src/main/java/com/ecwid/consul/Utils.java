@@ -29,10 +29,6 @@ public class Utils {
 		}
 	}
 
-	public static String generateUrl(String baseUrl, UrlParameters... params) {
-		return generateUrl(baseUrl, Arrays.asList(params));
-	}
-
 	public static String generateUrl(String baseUrl, List<UrlParameters> params) {
 		if (params == null) {
 			return baseUrl;
@@ -56,12 +52,6 @@ public class Utils {
 			}
 		}
 		return result.toString();
-	}
-
-	public static Map<String, String> createTokenMap(String token) {
-		Map<String, String> headers = new HashMap<>();
-		headers.put("X-Consul-Token", token);
-		return headers;
 	}
 
 	public static String toSecondsString(long waitTime) {
