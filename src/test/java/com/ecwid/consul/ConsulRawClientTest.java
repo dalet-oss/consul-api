@@ -30,15 +30,13 @@ public class ConsulRawClientTest {
     private static final String PATH = "path";
     private static final String EXPECTED_AGENT_ADDRESS_NO_PATH = "http://" + HOST + ":" + PORT + ENDPOINT;
     private static final String EXPECTED_AGENT_ADDRESS = "http://" + HOST + ":" + PORT + "/" + PATH + ENDPOINT;
+    private static final SingleUrlParameters TOKEN_PARAM = new SingleUrlParameters("token", "CONFIDENTIAL");
+    private static final List<UrlParameters> TOKEN_PARAMS = List.of(TOKEN_PARAM);
 
     private final ArgumentCaptor<HttpUriRequest> captor = ArgumentCaptor.forClass(HttpUriRequest.class);
     private final HttpClient httpClient = mock(HttpClient.class);
 
     private ConsulRawClient client;
-
-    private static final SingleUrlParameters TOKEN_PARAM = new SingleUrlParameters("token", "CONFIDENTIAL");
-    List<UrlParameters> TOKEN_PARAMS = List.of(TOKEN_PARAM);
-
 
     @BeforeEach
     void setup() {
