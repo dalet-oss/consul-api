@@ -99,11 +99,12 @@ public final class HealthServicesRequest implements ConsulRequest {
 		/**
 		 * Sets the service tag to filter results by.
 		 *
-		 * @see <a href="https://developer.hashicorp.com/consul/api-docs/health#query-parameters-2">https://developer.hashicorp.com/consul/api-docs/health#query-parameters-2</a>
 		 * @param tag The service tag to filter by.
 		 * @return This {@link Builder} instance for method chaining.
+		 * @see <a href="https://developer.hashicorp.com/consul/api-docs/health#query-parameters-2">https://developer.hashicorp.com/consul/api-docs/health#query-parameters-2</a>
+		 * @deprecated per linked Consul documentation, use {@code filter} with the {@code Service.Tags} selector instead
 		 */
-		@Deprecated
+		@Deprecated(since = "Consul server v1.9.0; consul-api library v1.5.0", forRemoval = true)
 		public Builder setTag(String tag) {
 			this.tags = new String[]{tag};
 			return this;
@@ -112,12 +113,12 @@ public final class HealthServicesRequest implements ConsulRequest {
 		/**
 		 * Sets the service tags to filter results by.
 		 *
-		 * @deprecated Use filter with the Service.Tags selector instead.
-		 * @see <a href="https://developer.hashicorp.com/consul/api-docs/health#query-parameters-2">https://developer.hashicorp.com/consul/api-docs/health#query-parameters-2</a>
 		 * @param tags The service tags to filter by.
 		 * @return This {@link Builder} instance for method chaining.
+		 * @see <a href="https://developer.hashicorp.com/consul/api-docs/health#query-parameters-2">https://developer.hashicorp.com/consul/api-docs/health#query-parameters-2</a>
+		 * @deprecated per linked Consul documentation, use {@code filter} with the {@code Service.Tags} selector instead
 		 */
-		@Deprecated
+		@Deprecated(since = "Consul server v1.9.0; consul-api library v1.5.0", forRemoval = true)
 		public Builder setTags(String[] tags) {
 			this.tags = tags;
 			return this;
@@ -126,12 +127,12 @@ public final class HealthServicesRequest implements ConsulRequest {
 		/**
 		 * Sets the node metadata to filter results by.
 		 *
-		 * @deprecated Use filter with the Node.Meta selector instead.
-		 * @see <a href="https://developer.hashicorp.com/consul/api-docs/health#query-parameters-2">https://developer.hashicorp.com/consul/api-docs/health#query-parameters-2</a>
 		 * @param nodeMeta The node metadata to filter by.
 		 * @return This {@link Builder} instance for method chaining.
+		 * @see <a href="https://developer.hashicorp.com/consul/api-docs/health#query-parameters-2">https://developer.hashicorp.com/consul/api-docs/health#query-parameters-2</a>
+		 * @deprecated per linked Consul documentation, use {@code filter} with the {@code Node.Meta} selector instead
 		 */
-		@Deprecated
+		@Deprecated(since = "Consul server v1.9.0; consul-api library v1.5.0", forRemoval = true)
 		public Builder setNodeMeta(Map<String, String> nodeMeta) {
 			this.nodeMeta = nodeMeta != null ? Collections.unmodifiableMap(nodeMeta) : null;
 			return this;
@@ -225,13 +226,14 @@ public final class HealthServicesRequest implements ConsulRequest {
 			Objects.equals(near, that.near) &&
 			Arrays.equals(tags, that.tags) &&
 			Objects.equals(nodeMeta, that.nodeMeta) &&
+			Objects.equals(filter, that.filter) &&
 			Objects.equals(queryParams, that.queryParams) &&
 			Objects.equals(token, that.token);
 	}
 
 	@Override
 	public int hashCode() {
-		int result = Objects.hash(datacenter, near, nodeMeta, passing, queryParams, token);
+		int result = Objects.hash(datacenter, near, nodeMeta, filter, passing, queryParams, token);
 		result = 31 * result + Arrays.hashCode(tags);
 		return result;
 	}
