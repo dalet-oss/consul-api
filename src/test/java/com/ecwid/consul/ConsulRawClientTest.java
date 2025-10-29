@@ -3,6 +3,7 @@ package com.ecwid.consul;
 import com.ecwid.consul.v1.ConsulRawClient;
 import com.ecwid.consul.v1.QueryParams;
 import com.ecwid.consul.v1.Request;
+import com.ecwid.consul.v1.health.HealthServicesRequest;
 import org.apache.http.Header;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.ResponseHandler;
@@ -169,6 +170,26 @@ public class ConsulRawClientTest {
         client.makeGetRequest(request);
         verify(httpClient).execute(captor.capture(), any(ResponseHandler.class));
         checkTokenExtraction();
+    }
+
+    @Test
+    void verifyHealthServicesRequestWithFilter() throws Exception {
+
+        HealthServicesRequest healthServicesRequest = HealthServicesRequest.newBuilder()
+            .setQueryParams(QueryParams.DEFAULT)
+            .setToken("CONFIDENTIAL")
+            .setPassing(true)
+            .setDatacenter("dc1")
+            .setFilter("""
+                "GPU" in Service.Tags and "CPU" in Service.Tags""")
+            .build();
+
+        client.makeGetRequest("/v1/health/service/the-service", healthServicesRequest.asUrlParameters());
+        verify(httpClient).execute(captor.capture(), any(ResponseHandler.class));
+
+        String targetUri = captor.getValue().getURI().toString();
+        assertThat(targetUri).isEqualTo("""
+            http://host:8888/path/v1/health/service/the-service?dc=dc1&filter=%22GPU%22+in+Service.Tags+and+%22CPU%22+in+Service.Tags&passing=true""");
     }
 
     private void checkTokenExtraction() {
