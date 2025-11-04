@@ -180,16 +180,14 @@ public class ConsulRawClientTest {
             .setToken("CONFIDENTIAL")
             .setPassing(true)
             .setDatacenter("dc1")
-            .setFilter("""
-                "GPU" in Service.Tags and "CPU" in Service.Tags""")
+            .setFilter("\"GPU\" in Service.Tags and \"CPU\" in Service.Tags")
             .build();
 
         client.makeGetRequest("/v1/health/service/the-service", healthServicesRequest.asUrlParameters());
         verify(httpClient).execute(captor.capture(), any(ResponseHandler.class));
 
         String targetUri = captor.getValue().getURI().toString();
-        assertThat(targetUri).isEqualTo("""
-            http://host:8888/path/v1/health/service/the-service?dc=dc1&filter=%22GPU%22+in+Service.Tags+and+%22CPU%22+in+Service.Tags&passing=true""");
+        assertThat(targetUri).isEqualTo("http://host:8888/path/v1/health/service/the-service?dc=dc1&filter=%22GPU%22+in+Service.Tags+and+%22CPU%22+in+Service.Tags&passing=true");
     }
 
     private void checkTokenExtraction() {

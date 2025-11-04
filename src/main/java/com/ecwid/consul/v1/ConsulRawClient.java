@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * @author Vasily Vasilkov (vgv@ecwid.com)
@@ -199,14 +200,15 @@ public class ConsulRawClient {
 		HttpRequest.Builder requestBuilder = HttpRequest.Builder.newBuilder();
 
 		for (UrlParameters urlParam : Optional.ofNullable(urlParams).orElse(new ArrayList<>())) {
-			if (urlParam instanceof SingleUrlParameters singleUrlParameters) {
+			if (urlParam instanceof SingleUrlParameters) {
+				SingleUrlParameters singleUrlParameters = (SingleUrlParameters) urlParam;
 				String token = extractTokenParam(singleUrlParameters);
 
 				if (token != null) {
 					requestBuilder.addHeader("X-Consul-Token", token);
 					finalUrlParams = urlParams.stream()
 						.filter(p -> !singleUrlParameters.equals(p))
-						.toList();
+						.collect(Collectors.toList());
 
 					break;
 				}
